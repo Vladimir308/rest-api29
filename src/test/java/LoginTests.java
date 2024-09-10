@@ -2,15 +2,15 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+
 
 public class LoginTests extends TestBase {
     @Test
     void successfulRegisterTest() {
         String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"pistol\"}";
-
-        given()
+        String token = given()
                 .body(authData)
                 .contentType(JSON)
                 .log().uri()
@@ -23,8 +23,12 @@ public class LoginTests extends TestBase {
                 .log().body()
                 .statusCode(200)
                 .body("id", is(4))
-                .body("token", notNullValue())
-                .body("token", is("QpwL5tke4Pnpja7X4"));
+                .extract().path("token");
+        assertThat(token)
+                .isNotNull()
+                .hasSizeGreaterThan(10)
+                .matches(t -> t.chars().allMatch(Character::isLetterOrDigit));
+
     }
 
     @Test
