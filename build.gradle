@@ -1,5 +1,24 @@
 plugins {
-    id "java-library"
+    id 'java-library'
+    id 'io.qameta.allure' version '2.12.0'
+    id "io.freefair.lombok" version "8.10"
+}
+
+
+def allureVersion = "2.21.0"
+
+allure {
+    report{
+        version.set(allureVersion)
+    }
+    adapter {
+        aspectjWeaver.set(true)
+        frameworks {
+            junit5 {
+                adapterVersion.set(allureVersion)
+            }
+        }
+    }
 }
 
 repositories {
@@ -7,14 +26,35 @@ repositories {
 }
 
 dependencies {
-    testImplementation(
-            'org.junit.jupiter:junit-jupiter:5.10.3',
-            'org.slf4j:slf4j-log4j12:2.0.13',
-            'org.assertj:assertj-core:3.21.0',
-            'io.rest-assured:rest-assured:5.5.0')
+    testImplementation (
+            "org.slf4j:slf4j-log4j12:2.0.13",
+            "org.junit.jupiter:junit-jupiter:5.10.3",
+            "io.rest-assured:rest-assured:5.5.0",
+            "io.rest-assured:json-schema-validator:5.5.0",
+            "io.qameta.allure:allure-rest-assured:2.28.1",
+            "org.assertj:assertj-core:3.26.3",
+            "org.aspectj:aspectjweaver:1.9.22.1"
+    )
+}
+
+compileTestJava{
+    options.encoding = 'UTF-8'
 }
 
 tasks.withType(Test) {
     useJUnitPlatform()
     systemProperties(System.getProperties())
+
+    testLogging {
+        lifecycle {
+            events "started", "skipped", "failed", "standard_error", "standard_out"
+            exceptionFormat "short"
+        }
+    }
+}
+
+task api_test(type: Test) {
+    useJUnitPlatform {
+        includeTags("API")
+    }
 }
