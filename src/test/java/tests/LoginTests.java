@@ -1,92 +1,89 @@
 package tests;
 
+import models.RegistrationRequestModel;
+import models.SuccessfulRegistrationResponseModel;
+import models.UnsuccessfulRegistrationResponseModel;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.qameta.allure.Allure.step;
 import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static specs.ReqresSpecs.*;
 
-
+@Tag("API")
+@DisplayName("/register tests")
 public class LoginTests extends TestBase {
     @Test
-    void successfulRegisterTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\", \"password\": \"pistol\"}";
-        String token = given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("/register")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("id", is(4))
-                .extract().path("token");
-        assertThat(token)
-                .isNotNull()
-                .hasSizeGreaterThan(10)
-                .matches(t -> t.chars().allMatch(Character::isLetterOrDigit));
-
+    void successfulRegistrationTest() {
+        RegistrationRequestModel regData = new RegistrationRequestModel();
+        regData.setEmail("eve.holt@reqres.in");
+        regData.setPassword("pistol");
+        SuccessfulRegistrationResponseModel response = step("Make request", () ->
+                given(requestSpec)
+                        .body(regData)
+                        .when()
+                        .post("/register")
+                        .then()
+                        .spec(successResponseSpec)
+                        .extract().as(SuccessfulRegistrationResponseModel.class));
+        step("Check registered user id", () ->
+                assertEquals("4", response.getId()));
+        step("Check registered user token", () ->
+                assertThat(response.getToken())
+                        .isNotNull()
+                        .hasSizeGreaterThan(10)
+                        .isAlphanumeric());
     }
 
     @Test
     void unSuccessfulRegisterBadRequestTest() {
-        String authData = "{\"email\": \"eve.holt\", \"password\": \"pistol\"}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("/register")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("Note: Only defined users succeed registration"));
+        RegistrationRequestModel regData = new RegistrationRequestModel();
+        regData.setEmail("eve.holt");
+        regData.setPassword("pistol");
+        UnsuccessfulRegistrationResponseModel response = step("Make request", () ->
+                given(requestSpec)
+                        .body(regData)
+                        .when()
+                        .post("/register")
+                        .then()
+                        .spec(errorResponseSpec)
+                        .extract().as(UnsuccessfulRegistrationResponseModel.class));
+        step("Check 'missing password' error", () ->
+                assertEquals("Note: Only defined users succeed registration", response.getError()));
     }
 
     @Test
-    void unSuccessfulRegisterNotPasswordTest() {
-        String authData = "{\"email\": \"eve.holt@reqres.in\"}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("/register")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("Missing password"));
+    void registrationWithNoPasswordTest() {
+        RegistrationRequestModel regData = new RegistrationRequestModel();
+        regData.setEmail("eve.holt@reqres.in");
+        UnsuccessfulRegistrationResponseModel response = step("Make request", () ->
+                given(requestSpec)
+                        .body(regData)
+                        .when()
+                        .post("/register")
+                        .then()
+                        .spec(errorResponseSpec)
+                        .extract().as(UnsuccessfulRegistrationResponseModel.class));
+        step("Check 'missing password' error", () ->
+                assertEquals("Missing password", response.getError()));
     }
 
     @Test
     void unSuccessfulRegisterNoUserTest() {
-        String authData = "{}";
-
-        given()
-                .body(authData)
-                .contentType(JSON)
-                .log().uri()
-
-                .when()
-                .post("/register")
-
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(400)
-                .body("error", is("Missing email or username"));
+        RegistrationRequestModel regData = new RegistrationRequestModel();
+        regData.setPassword("pistol");
+        UnsuccessfulRegistrationResponseModel response = step("Make request", () ->
+                given(requestSpec)
+                        .body(regData)
+                        .when()
+                        .post("/register")
+                        .then()
+                        .spec(errorResponseSpec)
+                        .extract().as(UnsuccessfulRegistrationResponseModel.class));
+        step("Check 'missing login' error", () ->
+                assertEquals("Missing email or username", response.getError()));
     }
 }

@@ -8,7 +8,7 @@ plugins {
 def allureVersion = "2.21.0"
 
 allure {
-    report{
+    report {
         version.set(allureVersion)
     }
     adapter {
@@ -26,7 +26,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation (
+    testImplementation(
             "org.slf4j:slf4j-log4j12:2.0.13",
             "org.junit.jupiter:junit-jupiter:5.10.3",
             "io.rest-assured:rest-assured:5.5.0",
@@ -37,7 +37,7 @@ dependencies {
     )
 }
 
-compileTestJava{
+compileTestJava {
     options.encoding = 'UTF-8'
 }
 
